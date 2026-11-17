@@ -204,6 +204,31 @@ async def probe_provider(
     structured: upstream bodies/exception strings can contain credentials or URLs.
     No configuration writes or billable inference calls are made here.
     """
+    from deeptutor.services.provider_registry import canonical_provider_name
+
+    binding = canonical_provider_name(binding)
+    if binding == "claude_code":
+        from deeptutor.services.llm.claude_sdk import discover_models
+
+        try:
+            models = await discover_models()
+            return {
+                "status": "connected",
+                "models": [
+                    {"id": "claude-code/default", "name": "Default (account setting)"},
+                    *[
+                        {"id": f"claude-code/{row['slug']}", "name": row["display_name"]}
+                        for row in models
+                    ],
+                ],
+            }
+        except ImportError:
+            return {"status": "unavailable", "models": []}
+        except (asyncio.TimeoutError, TimeoutError):
+            return {"status": "timeout", "models": []}
+        except Exception:
+            # SDK errors can contain private paths or authentication details.
+            return {"status": "unreachable", "models": []}
     if binding == "volcengine_speech":
         return {"status": "unavailable", "models": []}
     base_url = base_url.strip().rstrip("/")

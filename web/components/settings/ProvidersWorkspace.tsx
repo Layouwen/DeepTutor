@@ -121,6 +121,7 @@ export function ProvidersWorkspace() {
   const source = sources.find((p) => p.id === selected);
   const option = options.find((p) => p.value === source?.provider);
   const managed = source?.provider === "openai_codex";
+  const isClaudeCode = source?.provider === "claude_code";
   const connection = source?.source;
   const apiFormat = connection?.api_format ||
     (option?.default_api_format as CatalogConnection["api_format"]) || "auto";
@@ -294,6 +295,12 @@ export function ProvidersWorkspace() {
                   ) : (
                     <>
                       {source.provider === "codebuddy" && <CodeBuddyAuthCard />}
+                      {isClaudeCode && (
+                        <p className="text-[13px] text-[var(--muted-foreground)]">
+                          {t("settings.providerServices.claudeLogin")}
+                        </p>
+                      )}
+                      {!isClaudeCode && <>
                       {/* Address and credential belong on one line: they are the
                           two halves of one connection, and stacking them full
                           width was most of what made this pane feel cramped. */}
@@ -356,8 +363,9 @@ export function ProvidersWorkspace() {
                       {providerServiceSupport(source, "llm", connectionTargets, providers).enabled && option?.api_formats?.length !== 0 && (
                         <ProviderProtocol value={apiFormat} formats={option?.api_formats} onChange={value => change("api_format", value)} />
                       )}
+                      </>}
                       <ProviderServices key={source.id} source={source} onChange={value => change("service_overrides", value)} />
-                      <details className={`p-3.5 ${subPanelClass}`}>
+                      {!isClaudeCode && <details className={`p-3.5 ${subPanelClass}`}>
                         <summary className="cursor-pointer select-none rounded text-[13px] font-medium marker:text-[var(--muted-foreground)]">
                           {t("Advanced connection settings")}
                         </summary>
@@ -386,7 +394,7 @@ export function ProvidersWorkspace() {
                             />
                           )}
                         </div>
-                      </details>
+                      </details>}
                       <RegistryProbe
                         input={{ ...providerProbeInput(source, defaultBaseUrl), api_format: apiFormat }}
                         discovery={connection.discovery}

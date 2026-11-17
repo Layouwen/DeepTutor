@@ -198,6 +198,19 @@ beforeEach(() => {
   vi.stubGlobal("matchMedia", () => ({ matches: false }));
 });
 
+it("uses CLI login for Claude Code and discovers models without HTTP credentials", async () => {
+  live.connections = [{ id: "claude", name: "Claude account", provider: "claude_code", source_service: "llm", base_url: "", api_key: "", api_version: "" }];
+  mocks.fetch.mockResolvedValue({ ok: true, json: async () => ({ status: "connected", models: [{ id: "claude-code/default" }] }) });
+  render(<Harness page="providers" />);
+  fireEvent.click(screen.getByRole("button", { name: /Claude account/ }));
+  expect(screen.queryByLabelText("Provider URL")).toBeNull();
+  expect(screen.queryByLabelText("API key")).toBeNull();
+  expect(screen.queryByText("Advanced connection settings")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Test provider" }));
+  await waitFor(() => expect(mocks.fetch).toHaveBeenCalled());
+  expect(JSON.parse(mocks.fetch.mock.calls[0][1].body)).toMatchObject({ binding: "claude_code", base_url: "" });
+});
+
 it("offers one MiniMax vendor with protocol choices instead of legacy provider aliases", () => {
   render(<Harness page="providers" providerOptions={minimaxProviders} />);
   fireEvent.click(screen.getByRole("button", { name: "Add provider" }));

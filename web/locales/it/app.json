@@ -1,4 +1,5 @@
 {
+  "settings.providerServices.claudeLogin": "Uses the local Claude Code login. No provider URL or API key is needed. Install the claude-code extra in the backend environment, then sign in with claude.",
   "language.english": "English",
   "Guided Learning": "Apprendimento guidato",
   "Save": "Salva",

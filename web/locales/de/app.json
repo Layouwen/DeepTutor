@@ -1,4 +1,5 @@
 {
+  "settings.providerServices.claudeLogin": "Uses the local Claude Code login. No provider URL or API key is needed. Install the claude-code extra in the backend environment, then sign in with claude.",
   "Your account changed. Reload settings before applying learning text.": "Your account changed. Reload settings before applying learning text.",
   "Customize the visual theme, learning text, and code blocks. Apply changes using the bar below.": "Customize the visual theme, learning text, and code blocks. Apply changes using the bar below.",
   "Learning text": "Learning text",

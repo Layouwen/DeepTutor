@@ -125,6 +125,48 @@ async def test_provider_probe_uses_the_form_search_proxy(monkeypatch):
     assert calls[0]["proxies"] == {"http": "http://proxy:3128", "https": "http://proxy:3128"}
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("binding", ["claude_code", "claude-code", "claudecode"])
+async def test_claude_probe_uses_cli_without_http_address(monkeypatch, binding):
+    from deeptutor.services.llm import claude_sdk
+
+    async def discover():
+        return [{"slug": "sonnet", "display_name": "Sonnet"}]
+
+    monkeypatch.setattr(claude_sdk, "discover_models", discover)
+    from deeptutor.api.routers import settings as router
+
+    monkeypatch.setattr(router, "_require_settings_admin", lambda: None)
+    monkeypatch.setattr(router, "get_model_catalog_service", lambda: SimpleNamespace(load=lambda: {}))
+    monkeypatch.setattr(router, "get_settings_draft_service", lambda: SimpleNamespace(load=lambda: {}))
+    result = await router.test_provider_connection(
+        router.ProviderProbePayload(binding=binding, base_url="", service="llm")
+    )
+    assert result == {
+        "status": "connected",
+        "models": [
+            {"id": "claude-code/default", "name": "Default (account setting)"},
+            {"id": "claude-code/sonnet", "name": "Sonnet"},
+        ],
+    }
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "error,status",
+    [(ImportError("secret"), "unavailable"), (TimeoutError("secret"), "timeout"),
+     (RuntimeError("secret"), "unreachable")],
+)
+async def test_claude_probe_does_not_report_fallback_catalog_as_connected(monkeypatch, error, status):
+    from deeptutor.services.llm import claude_sdk
+
+    async def discover():
+        raise error
+
+    monkeypatch.setattr(claude_sdk, "discover_models", discover)
+    assert await provider_probe.probe_provider("claude_code", "") == {"status": status, "models": []}
+
+
 class Response:
     def __init__(self, status=200, payload=None):
         self.status, self.payload = status, payload
